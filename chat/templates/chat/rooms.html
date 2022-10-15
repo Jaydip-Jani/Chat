@@ -1,0 +1,70 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Rooms | {% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-body">
+        <h1 class="title has-text-centered has-text-white">Rooms</h1>
+    </div>
+</div>
+
+<section class="section has-text-white">
+    <div class="columns is-multiline">
+        {% for room in rooms %}
+        <div class="column is-4 has-text-centered">
+            <div class="box">
+                <h2 class="subtitle">{{ room.name }}</h2>
+
+                <a href="#" class="button">Join</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+<body>
+<textarea id="chat-log" cols="100" rows="20"></textarea><br>
+<input id="chat-message-input" type="text" size="100"><br>
+<input id="chat-message-submit" type="button" value="Send">
+{{ room_name|json_script:"room-name" }}
+<script>
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+        const chatSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/chat/'
+            + roomName
+            + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            document.querySelector('#chat-log').value += (data.message + '\n');
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInputDom.value = '';
+        };
+
+
+
+</script>
+</body>
+{% endblock %}
